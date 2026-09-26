@@ -1,98 +1,280 @@
-import * as Device from 'expo-device';
-import { Platform, StyleSheet } from 'react-native';
+import React, { useState } from 'react';
+import { View, StyleSheet, Modal, TouchableOpacity, Text, StatusBar } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { CartProvider, useCart } from '../context/CartContext';
+import { PrinterProvider } from '../context/PrinterContext';
+import { useResponsive } from '../utils/responsive';
+import Header from '../components/Header';
+import CategoryList from '../components/CategoryList';
+import ProductGrid from '../components/ProductGrid';
+import Cart from '../components/Cart';
+import colors from '../theme/colors';
+import spacing from '../theme/spacing';
+import typography from '../theme/typography';
+import { CartIcon, ArrowRightIcon } from '../components/icons';
 
-import { AnimatedIcon } from '@/components/animated-icon';
-import { HintRow } from '@/components/hint-row';
-import { ThemedText } from '@/components/themed-text';
-import { ThemedView } from '@/components/themed-view';
-import { WebBadge } from '@/components/web-badge';
-import { BottomTabInset, MaxContentWidth, Spacing } from '@/constants/theme';
+function MainPOSContent() {
+  const { isSmallPhone, isPhone, isTablet, isLargeTablet, isLandscape } = useResponsive();
+  const { totalItemCount, totalAmount } = useCart();
+  const [mobileCartOpen, setMobileCartOpen] = useState(false);
 
-function getDevMenuHint() {
-  if (Platform.OS === 'web') {
-    return <ThemedText type="small">use browser devtools</ThemedText>;
-  }
-  if (Device.isDevice) {
-    return (
-      <ThemedText type="small">
-        shake device or press <ThemedText type="code">m</ThemedText> in terminal
-      </ThemedText>
-    );
-  }
-  const shortcut = Platform.OS === 'android' ? 'cmd+m (or ctrl+m)' : 'cmd+d';
+  const isPhoneLandscape = isPhone && isLandscape;
+  const isTabletPortrait = isTablet && !isLandscape && !isLargeTablet;
+
   return (
-    <ThemedText type="small">
-      press <ThemedText type="code">{shortcut}</ThemedText>
-    </ThemedText>
+    <SafeAreaView style={styles.safeArea}>
+      <StatusBar barStyle="dark-content" backgroundColor={colors.surface} />
+      <View style={styles.appContainer}>
+        {/* Responsive Header */}
+        <Header onOpenCart={() => setMobileCartOpen(true)} />
+
+        {/* Responsive Layout Matrix */}
+        {isPhone && !isPhoneLandscape ? (
+          /* ================= 1. PHONE PORTRAIT LAYOUT ================= */
+          <View style={styles.phoneLayoutContainer}>
+            {/* Horizontal Category Bar */}
+            <CategoryList vertical={false} />
+
+            {/* Product Grid */}
+            <View style={styles.mainArea}>
+              <ProductGrid />
+            </View>
+
+            {/* Floating Touch-Friendly Bottom Order Bar */}
+            {totalItemCount > 0 && (
+              <TouchableOpacity
+                style={[styles.bottomBar, isSmallPhone && styles.bottomBarSmall]}
+                onPress={() => setMobileCartOpen(true)}
+                activeOpacity={0.85}>
+                <View style={styles.bottomBarLeft}>
+                  <View style={styles.cartBadgeCircle}>
+                    <CartIcon size={18} color={colors.textOnPrimary} />
+                  </View>
+                  <View style={{ flexShrink: 1 }}>
+                    <Text style={styles.bottomBarItemCount} numberOfLines={1}>
+                      {totalItemCount} {totalItemCount === 1 ? 'item' : 'items'}
+                    </Text>
+                    <Text style={styles.bottomBarViewCartText} numberOfLines={1}>
+                      Tap to review order
+                    </Text>
+                  </View>
+                </View>
+
+                <View style={styles.bottomBarRight}>
+                  <Text style={styles.bottomBarTotal}>₹{totalAmount}</Text>
+                  <ArrowRightIcon size={18} color={colors.textOnPrimary} />
+                </View>
+              </TouchableOpacity>
+            )}
+
+            {/* Mobile Sliding Cart Sheet */}
+            <Modal
+              visible={mobileCartOpen}
+              animationType="slide"
+              presentationStyle="pageSheet"
+              onRequestClose={() => setMobileCartOpen(false)}>
+              <SafeAreaView style={styles.mobileCartSafeArea}>
+                <Cart isMobileSheet onCloseMobileCart={() => setMobileCartOpen(false)} />
+              </SafeAreaView>
+            </Modal>
+          </View>
+        ) : isPhoneLandscape ? (
+          /* ================= 2. PHONE LANDSCAPE LAYOUT ================= */
+          <View style={styles.phoneLandscapeContainer}>
+            <View style={styles.landscapeLeftPane}>
+              <CategoryList vertical={false} />
+              <View style={styles.mainArea}>
+                <ProductGrid />
+              </View>
+            </View>
+
+            <View style={styles.landscapeRightPane}>
+              <Cart />
+            </View>
+          </View>
+        ) : isTabletPortrait ? (
+          /* ================= 3. TABLET PORTRAIT (600 <= width < 900) ================= */
+          <View style={styles.tabletPortraitContainer}>
+            {/* Left 60%: Horizontal Category Bar + Full Product Grid */}
+            <View style={styles.tabletPortraitLeftPane}>
+              <CategoryList vertical={false} />
+              <View style={styles.mainArea}>
+                <ProductGrid />
+              </View>
+            </View>
+
+            {/* Right 40%: Persistent Order Cart */}
+            <View style={styles.tabletPortraitRightPane}>
+              <Cart />
+            </View>
+          </View>
+        ) : (
+          /* ================= 4. TABLET LANDSCAPE / LARGE TABLET 3-COLUMN POS ================= */
+          <View style={styles.tabletLayoutContainer}>
+            {/* Left Column: Persistent Category Sidebar */}
+            <View style={[styles.tabletLeftColumn, isLargeTablet && styles.tabletLeftColumnLarge]}>
+              <CategoryList vertical={true} />
+            </View>
+
+            {/* Center Column: Expansive Product Grid */}
+            <View style={styles.tabletCenterColumn}>
+              <ProductGrid />
+            </View>
+
+            {/* Right Column: Persistent Order & Checkout */}
+            <View style={[styles.tabletRightColumn, isLargeTablet && styles.tabletRightColumnLarge]}>
+              <Cart />
+            </View>
+          </View>
+        )}
+      </View>
+    </SafeAreaView>
   );
 }
 
-export default function HomeScreen() {
+export default function POSHomeScreen() {
   return (
-    <ThemedView style={styles.container}>
-      <SafeAreaView style={styles.safeArea}>
-        <ThemedView style={styles.heroSection}>
-          <AnimatedIcon />
-          <ThemedText type="title" style={styles.title}>
-            Welcome to&nbsp;Expo
-          </ThemedText>
-        </ThemedView>
-
-        <ThemedText type="code" style={styles.code}>
-          get started
-        </ThemedText>
-
-        <ThemedView type="backgroundElement" style={styles.stepContainer}>
-          <HintRow
-            title="Try editing"
-            hint={<ThemedText type="code">src/app/index.tsx</ThemedText>}
-          />
-          <HintRow title="Dev tools" hint={getDevMenuHint()} />
-          <HintRow
-            title="Fresh start"
-            hint={<ThemedText type="code">npm run reset-project</ThemedText>}
-          />
-        </ThemedView>
-
-        {Platform.OS === 'web' && <WebBadge />}
-      </SafeAreaView>
-    </ThemedView>
+    <PrinterProvider>
+      <CartProvider>
+        <MainPOSContent />
+      </CartProvider>
+    </PrinterProvider>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    justifyContent: 'center',
-    flexDirection: 'row',
-  },
   safeArea: {
     flex: 1,
-    paddingHorizontal: Spacing.four,
-    alignItems: 'center',
-    gap: Spacing.three,
-    paddingBottom: BottomTabInset + Spacing.three,
-    maxWidth: MaxContentWidth,
+    backgroundColor: colors.surface,
   },
-  heroSection: {
+  appContainer: {
+    flex: 1,
+    backgroundColor: colors.background,
+  },
+
+  /* Phone Portrait */
+  phoneLayoutContainer: {
+    flex: 1,
+  },
+  mainArea: {
+    flex: 1,
+  },
+  bottomBar: {
+    position: 'absolute',
+    bottom: spacing.md,
+    left: spacing.md,
+    right: spacing.md,
+    height: 58,
+    backgroundColor: colors.totalBackground,
+    borderRadius: spacing.radiusLg,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: spacing.md,
+    elevation: 8,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.25,
+    shadowRadius: 8,
+  },
+  bottomBarSmall: {
+    bottom: spacing.sm,
+    left: spacing.sm,
+    right: spacing.sm,
+    height: 54,
+    paddingHorizontal: spacing.sm,
+  },
+  bottomBarLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    flex: 1,
+  },
+  cartBadgeCircle: {
+    width: 34,
+    height: 34,
+    borderRadius: 17,
+    backgroundColor: colors.primary,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  bottomBarItemCount: {
+    ...typography.button,
+    fontSize: 14,
+    color: colors.textOnPrimary,
+  },
+  bottomBarViewCartText: {
+    ...typography.caption,
+    fontSize: 11,
+    color: colors.textMuted,
+  },
+  bottomBarRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  bottomBarTotal: {
+    ...typography.heading,
+    fontSize: 18,
+    color: colors.textOnPrimary,
+  },
+  mobileCartSafeArea: {
     flex: 1,
-    paddingHorizontal: Spacing.four,
-    gap: Spacing.four,
+    backgroundColor: colors.surface,
   },
-  title: {
-    textAlign: 'center',
+
+  /* Phone Landscape */
+  phoneLandscapeContainer: {
+    flex: 1,
+    flexDirection: 'row',
   },
-  code: {
-    textTransform: 'uppercase',
+  landscapeLeftPane: {
+    flex: 6,
+    borderRightWidth: 1,
+    borderRightColor: colors.border,
   },
-  stepContainer: {
-    gap: Spacing.three,
-    alignSelf: 'stretch',
-    paddingHorizontal: Spacing.three,
-    paddingVertical: Spacing.four,
-    borderRadius: Spacing.four,
+  landscapeRightPane: {
+    flex: 4,
+  },
+
+  /* Tablet Portrait (600 <= width < 900) */
+  tabletPortraitContainer: {
+    flex: 1,
+    flexDirection: 'row',
+  },
+  tabletPortraitLeftPane: {
+    flex: 62,
+    borderRightWidth: 1,
+    borderRightColor: colors.border,
+  },
+  tabletPortraitRightPane: {
+    flex: 38,
+    minWidth: 290,
+    maxWidth: 350,
+  },
+
+  /* Tablet 3-Column POS Layout (width >= 900 or Landscape) */
+  tabletLayoutContainer: {
+    flex: 1,
+    flexDirection: 'row',
+  },
+  tabletLeftColumn: {
+    width: 195,
+    borderRightWidth: 1,
+    borderRightColor: colors.border,
+  },
+  tabletLeftColumnLarge: {
+    width: 230,
+  },
+  tabletCenterColumn: {
+    flex: 1,
+    borderRightWidth: 1,
+    borderRightColor: colors.border,
+  },
+  tabletRightColumn: {
+    width: 320,
+  },
+  tabletRightColumnLarge: {
+    width: 360,
   },
 });
