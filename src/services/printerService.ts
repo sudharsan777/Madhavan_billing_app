@@ -115,11 +115,12 @@ export class PrinterService {
     commands += ESC + 'a' + '\x01';
     // Double height + double width for header
     commands += ESC + '!' + '\x38';
-    commands += 'MADHAVAN SHOP\n';
+    commands += 'JK COOL DRINKS\n';
     // Normal text size
     commands += ESC + '!' + '\x00';
-    commands += 'Ayapakkam, Ambattur, Chennai\n';
-    commands += 'Ph: +91 9361104618\n';
+    commands += '91/4, 1st Main Road, TNHB Anna Park\n';
+    commands += 'Opp. Ayappakam, Chennai - 600 077\n';
+    commands += 'Ph: +91 93611 04618\n';
     commands += '--------------------------------\n';
 
     // Left align
@@ -148,7 +149,7 @@ export class PrinterService {
     // Center alignment for footer
     commands += ESC + 'a' + '\x01';
     commands += 'Thank you! Visit again\n';
-    commands += 'Madhavan Shop\n\n\n';
+    commands += 'JK Cool Drinks\n\n\n';
 
     // Paper cut command
     commands += GS + 'V' + '\x41' + '\x03';

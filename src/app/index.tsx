@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { View, StyleSheet, Modal, TouchableOpacity, Text, StatusBar } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { LinearGradient } from 'expo-linear-gradient';
 import { CartProvider, useCart } from '../context/CartContext';
 import { PrinterProvider } from '../context/PrinterContext';
 import { useResponsive } from '../utils/responsive';
@@ -43,27 +44,37 @@ function MainPOSContent() {
             {/* Floating Touch-Friendly Bottom Order Bar */}
             {totalItemCount > 0 && (
               <TouchableOpacity
-                style={[styles.bottomBar, isSmallPhone && styles.bottomBarSmall]}
+                style={[styles.bottomBarWrapper, isSmallPhone && styles.bottomBarWrapperSmall]}
                 onPress={() => setMobileCartOpen(true)}
-                activeOpacity={0.85}>
-                <View style={styles.bottomBarLeft}>
-                  <View style={styles.cartBadgeCircle}>
-                    <CartIcon size={18} color={colors.textOnPrimary} />
+                activeOpacity={0.88}>
+                <LinearGradient
+                  colors={['#1C1917', '#292524', '#451A03']}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 1 }}
+                  style={styles.bottomBarGradient}>
+                  <View style={styles.bottomBarLeft}>
+                    <LinearGradient
+                      colors={colors.gradients.gold}
+                      start={{ x: 0, y: 0 }}
+                      end={{ x: 1, y: 1 }}
+                      style={styles.cartBadgeCircle}>
+                      <CartIcon size={17} color="#FFFFFF" />
+                    </LinearGradient>
+                    <View style={{ flexShrink: 1 }}>
+                      <Text style={styles.bottomBarItemCount} numberOfLines={1}>
+                        {totalItemCount} {totalItemCount === 1 ? 'item' : 'items'}
+                      </Text>
+                      <Text style={styles.bottomBarViewCartText} numberOfLines={1}>
+                        Tap to review order
+                      </Text>
+                    </View>
                   </View>
-                  <View style={{ flexShrink: 1 }}>
-                    <Text style={styles.bottomBarItemCount} numberOfLines={1}>
-                      {totalItemCount} {totalItemCount === 1 ? 'item' : 'items'}
-                    </Text>
-                    <Text style={styles.bottomBarViewCartText} numberOfLines={1}>
-                      Tap to review order
-                    </Text>
-                  </View>
-                </View>
 
-                <View style={styles.bottomBarRight}>
-                  <Text style={styles.bottomBarTotal}>₹{totalAmount}</Text>
-                  <ArrowRightIcon size={18} color={colors.textOnPrimary} />
-                </View>
+                  <View style={styles.bottomBarRight}>
+                    <Text style={styles.bottomBarTotal}>₹{Number(totalAmount).toLocaleString('en-IN')}</Text>
+                    <ArrowRightIcon size={18} color="#FDE68A" />
+                  </View>
+                </LinearGradient>
               </TouchableOpacity>
             )}
 
@@ -155,34 +166,38 @@ const styles = StyleSheet.create({
   /* Phone Portrait */
   phoneLayoutContainer: {
     flex: 1,
+    backgroundColor: colors.background,
   },
   mainArea: {
     flex: 1,
+    backgroundColor: colors.background,
   },
-  bottomBar: {
+  bottomBarWrapper: {
     position: 'absolute',
     bottom: spacing.md,
     left: spacing.md,
     right: spacing.md,
-    height: 58,
-    backgroundColor: colors.totalBackground,
     borderRadius: spacing.radiusLg,
+    overflow: 'hidden',
+    elevation: 8,
+    shadowColor: '#1C1917',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.25,
+    shadowRadius: 8,
+    borderWidth: 1,
+    borderColor: '#78350F',
+  },
+  bottomBarWrapperSmall: {
+    bottom: spacing.sm,
+    left: spacing.sm,
+    right: spacing.sm,
+  },
+  bottomBarGradient: {
+    height: 60,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: spacing.md,
-    elevation: 8,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.25,
-    shadowRadius: 8,
-  },
-  bottomBarSmall: {
-    bottom: spacing.sm,
-    left: spacing.sm,
-    right: spacing.sm,
-    height: 54,
-    paddingHorizontal: spacing.sm,
   },
   bottomBarLeft: {
     flexDirection: 'row',
@@ -191,32 +206,33 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   cartBadgeCircle: {
-    width: 34,
-    height: 34,
-    borderRadius: 17,
-    backgroundColor: colors.primary,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
     alignItems: 'center',
     justifyContent: 'center',
   },
   bottomBarItemCount: {
     ...typography.button,
     fontSize: 14,
-    color: colors.textOnPrimary,
+    fontWeight: '800',
+    color: '#FFFFFF',
   },
   bottomBarViewCartText: {
     ...typography.caption,
     fontSize: 11,
-    color: colors.textMuted,
+    color: '#D6D3D1',
   },
   bottomBarRight: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 4,
+    gap: 6,
   },
   bottomBarTotal: {
     ...typography.heading,
-    fontSize: 18,
-    color: colors.textOnPrimary,
+    fontSize: 19,
+    fontWeight: '900',
+    color: '#FFFFFF',
   },
   mobileCartSafeArea: {
     flex: 1,
@@ -230,8 +246,8 @@ const styles = StyleSheet.create({
   },
   landscapeLeftPane: {
     flex: 6,
-    borderRightWidth: 1,
-    borderRightColor: colors.border,
+    borderRightWidth: 1.5,
+    borderRightColor: '#E7E2D7',
   },
   landscapeRightPane: {
     flex: 4,
@@ -244,8 +260,8 @@ const styles = StyleSheet.create({
   },
   tabletPortraitLeftPane: {
     flex: 62,
-    borderRightWidth: 1,
-    borderRightColor: colors.border,
+    borderRightWidth: 1.5,
+    borderRightColor: '#E7E2D7',
   },
   tabletPortraitRightPane: {
     flex: 38,
@@ -259,22 +275,23 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
   },
   tabletLeftColumn: {
-    width: 195,
-    borderRightWidth: 1,
-    borderRightColor: colors.border,
+    width: 200,
+    height: '100%',
+    borderRightWidth: 1.5,
+    borderRightColor: '#E7E2D7',
   },
   tabletLeftColumnLarge: {
-    width: 230,
+    width: 235,
   },
   tabletCenterColumn: {
     flex: 1,
-    borderRightWidth: 1,
-    borderRightColor: colors.border,
+    borderRightWidth: 1.5,
+    borderRightColor: '#E7E2D7',
   },
   tabletRightColumn: {
-    width: 320,
+    width: 330,
   },
   tabletRightColumnLarge: {
-    width: 360,
+    width: 370,
   },
 });

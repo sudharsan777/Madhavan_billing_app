@@ -1,7 +1,10 @@
 import React, { useState } from 'react';
-import { View, Text, FlatList, StyleSheet, TouchableOpacity, Alert } from 'react-native';
+import { View, Text, FlatList, StyleSheet, TouchableOpacity, Alert, Modal } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useCart } from '../context/CartContext';
 import { usePrinter } from '../context/PrinterContext';
+import { saveBillToFirestore, deleteBillFromFirestore } from '../services/billService';
+import { triggerBillSavedNotification } from '../services/notificationService';
 import CartItemComponent from './CartItem';
 import OrderSummary from './OrderSummary';
 import PrimaryButton from './PrimaryButton';
@@ -10,7 +13,7 @@ import BillModal from './BillModal';
 import colors from '../theme/colors';
 import spacing from '../theme/spacing';
 import typography from '../theme/typography';
-import { CartIcon, TrashIcon, PrinterIcon, CheckIcon, CloseIcon } from './icons';
+import { CartIcon, TrashIcon, PrinterIcon, CheckIcon, CloseIcon, ReceiptIcon } from './icons';
 
 interface CartProps {
   onCloseMobileCart?: () => void;
@@ -23,7 +26,6 @@ export const Cart: React.FC<CartProps> = ({ onCloseMobileCart, isMobileSheet = f
     clearCart,
     totalItemCount,
     tableNumber,
-    setTableNumber,
     subtotal,
     discountPercent,
     discountAmount,
@@ -35,47 +37,138 @@ export const Cart: React.FC<CartProps> = ({ onCloseMobileCart, isMobileSheet = f
   const [billModalVisible, setBillModalVisible] = useState(false);
   const [isPrinting, setIsPrinting] = useState(false);
 
+  /** Opens the bill modal directly for preview & printing */
   const handleSaveBill = () => {
     if (cartItems.length === 0) return;
     setBillModalVisible(true);
   };
 
+  /** Direct print and store flow without customer details */
   const handleDirectPrintBill = async () => {
-    if (cartItems.length === 0) return;
+    if (cartItems.length === 0 || isPrinting) return;
     setIsPrinting(true);
 
     const billNumber = `INV-${Math.floor(100000 + Math.random() * 900000)}`;
-    const result = await printBill({
-      billNumber,
-      tableNumber,
-      timestamp: new Date().toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' }),
-      items: cartItems.map((ci) => ({
-        name: ci.item.name,
-        qty: ci.quantity,
-        price: ci.item.price,
-      })),
-      subtotal,
-      discountAmount,
-      totalAmount,
-    });
 
-    setIsPrinting(false);
+    try {
+      // 1. Print the bill on the Bluetooth thermal printer
+      const printResult = await printBill({
+        billNumber,
+        tableNumber,
+        timestamp: new Date().toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' }),
+        items: cartItems.map((ci) => ({
+          name: ci.item.name,
+          qty: ci.quantity,
+          price: ci.item.price,
+        })),
+        subtotal,
+        discountAmount,
+        totalAmount,
+      });
 
-    if (result.success) {
-      Alert.alert('Print Successful', result.message, [
-        {
-          text: 'New Order',
-          onPress: () => {
-            clearCart();
-            if (onCloseMobileCart) onCloseMobileCart();
-          },
-        },
-      ]);
-    } else {
-      Alert.alert('Printer Error', result.message || 'Printer not connected.', [
-        { text: 'View Preview', onPress: () => setBillModalVisible(true) },
-        { text: 'OK' },
-      ]);
+      // STRICT CHECK: Only save to Firestore AFTER the bill is successfully printed!
+      if (!printResult.success) {
+        setIsPrinting(false);
+        Alert.alert(
+          'Printing Failed — Bill Not Saved',
+          `${printResult.message || 'Thermal printer is not connected or printing failed.'}\n\nThe bill was NOT saved to Firestore. Please connect the printer and try again.`,
+          [
+            { text: 'OK' },
+            { text: 'Preview Bill', onPress: () => setBillModalVisible(true) },
+          ]
+        );
+        return;
+      }
+
+      // 2. NOW that printing succeeded, store the bill in Cloud Firestore
+      const saveResult = await saveBillToFirestore({
+        billNumber,
+        items: cartItems.map((ci) => ({
+          id: ci.item.id,
+          name: ci.item.name,
+          category: ci.item.category,
+          price: ci.item.price,
+          quantity: ci.quantity,
+        })),
+        subtotal,
+        discountAmount,
+        totalAmount,
+        paymentMethod: 'CASH',
+      });
+
+      if (saveResult.billId) {
+        triggerBillSavedNotification(billNumber, totalAmount, saveResult.billId);
+      }
+
+      setIsPrinting(false);
+
+      if (saveResult.success) {
+        Alert.alert(
+          'Bill Printed & Saved',
+          `Bill ${billNumber} printed and recorded in Firestore.\n\nTotal: ₹${totalAmount}`,
+          [
+            {
+              text: 'Delete Bill',
+              style: 'destructive',
+              onPress: () => {
+                if (!saveResult.billId) return;
+                Alert.alert(
+                  'Delete Bill Confirmation',
+                  `Are you sure you want to delete bill ${billNumber} from Cloud Firestore?`,
+                  [
+                    {
+                      text: 'Cancel',
+                      style: 'cancel',
+                      onPress: () => {
+                        clearCart();
+                        if (onCloseMobileCart) onCloseMobileCart();
+                      },
+                    },
+                    {
+                      text: 'Delete',
+                      style: 'destructive',
+                      onPress: async () => {
+                        const delRes = await deleteBillFromFirestore(saveResult.billId!);
+                        if (delRes.success) {
+                          Alert.alert('Bill Deleted', `Bill ${billNumber} was removed from Firestore.`);
+                        } else {
+                          Alert.alert('Delete Failed', delRes.error || 'Failed to delete bill.');
+                        }
+                        clearCart();
+                        if (onCloseMobileCart) onCloseMobileCart();
+                      },
+                    },
+                  ]
+                );
+              },
+            },
+            {
+              text: 'New Order',
+              onPress: () => {
+                clearCart();
+                if (onCloseMobileCart) onCloseMobileCart();
+              },
+            },
+          ]
+        );
+      } else {
+        Alert.alert(
+          'Printed',
+          `Bill ${billNumber} printed successfully, but failed to save in Firestore: ${saveResult.error || 'Network error.'}`,
+          [
+            {
+              text: 'New Order',
+              onPress: () => {
+                clearCart();
+                if (onCloseMobileCart) onCloseMobileCart();
+              },
+            },
+          ]
+        );
+      }
+    } catch (err: any) {
+      setIsPrinting(false);
+      Alert.alert('Error', err?.message || 'Encountered printing error.');
     }
   };
 
@@ -145,18 +238,18 @@ export const Cart: React.FC<CartProps> = ({ onCloseMobileCart, isMobileSheet = f
 
           <View style={styles.actionButtons}>
             <SecondaryButton
-              title="PRINT BILL"
-              onPress={handleDirectPrintBill}
-              loading={isPrinting}
-              icon={<PrinterIcon size={18} color={colors.textPrimary} />}
+              title="PREVIEW BILL"
+              onPress={handleSaveBill}
+              icon={<ReceiptIcon size={18} color={colors.textPrimary} />}
               style={{ flex: 1 }}
             />
             <PrimaryButton
-              title="SAVE BILL"
-              onPress={handleSaveBill}
-              icon={<CheckIcon size={18} color={colors.textOnPrimary} />}
+              title="PRINT BILL"
+              onPress={handleDirectPrintBill}
+              loading={isPrinting}
+              icon={<PrinterIcon size={18} color={colors.textOnPrimary} />}
               variant="primary"
-              style={{ flex: 1 }}
+              style={{ flex: 1.2 }}
             />
           </View>
         </View>

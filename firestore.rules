@@ -1,0 +1,20 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ── Bills — only the app can write; secured later with Auth ──
+    match /bills/{billId} {
+      allow read, write: if true;
+    }
+
+    // ── Device Push Tokens — each device saves its own token ──
+    match /deviceTokens/{deviceId} {
+      allow read, write: if true;
+    }
+
+    // ── Connection tests — cleanup after test ──
+    match /_connection_tests/{testId} {
+      allow read, write: if true;
+    }
+  }
+}

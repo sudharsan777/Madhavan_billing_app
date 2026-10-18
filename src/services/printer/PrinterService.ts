@@ -264,10 +264,11 @@ export class PrinterService {
       // ── Header (centered, double-size) ─────────────────────────────────────
       receipt += ESC + 'a' + '\x01';           // Center align
       receipt += ESC + '!' + '\x38';           // Double height + width
-      receipt += 'MADHAVAN SHOP\n';
+      receipt += 'JK COOL DRINKS\n';
       receipt += ESC + '!' + '\x00';           // Normal size
-      receipt += 'Ayapakkam, Ambattur, Chennai\n';
-      receipt += 'Ph: +91 9361104618\n';
+      receipt += '91/4, 1st Main Road, TNHB Anna Park\n';
+      receipt += 'Opp. Ayappakam, Chennai - 600 077\n';
+      receipt += 'Ph: +91 93611 04618\n';
       receipt += '--------------------------------\n';
 
       // ── Bill details (left-aligned) ────────────────────────────────────────
@@ -297,7 +298,7 @@ export class PrinterService {
       // ── Footer ─────────────────────────────────────────────────────────────
       receipt += ESC + 'a' + '\x01';           // Center
       receipt += 'Thank you! Visit again\n';
-      receipt += 'Madhavan Shop\n\n\n';
+      receipt += 'JK Cool Drinks\n\n\n';
 
       // ── Paper cut ──────────────────────────────────────────────────────────
       receipt += GS + 'V' + '\x41' + '\x03';

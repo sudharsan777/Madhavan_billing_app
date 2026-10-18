@@ -1,5 +1,6 @@
 import React from 'react';
-import { TouchableOpacity, Text, StyleSheet, ViewStyle, TextStyle, ActivityIndicator } from 'react-native';
+import { TouchableOpacity, Text, StyleSheet, ViewStyle, TextStyle, ActivityIndicator, View } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 import colors from '../theme/colors';
 import spacing from '../theme/spacing';
 import typography from '../theme/typography';
@@ -25,6 +26,37 @@ export const PrimaryButton: React.FC<PrimaryButtonProps> = ({
   textStyle,
   variant = 'primary',
 }) => {
+  const content = (
+    <>
+      {loading ? (
+        <ActivityIndicator color={colors.textOnPrimary} size="small" />
+      ) : (
+        <View style={styles.innerRow}>
+          {icon && icon}
+          <Text style={[styles.text, textStyle]}>{title}</Text>
+        </View>
+      )}
+    </>
+  );
+
+  if (!disabled && variant === 'primary') {
+    return (
+      <TouchableOpacity
+        style={[styles.buttonWrapper, style]}
+        onPress={onPress}
+        disabled={disabled || loading}
+        activeOpacity={0.85}>
+        <LinearGradient
+          colors={colors.gradients.gold}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={styles.gradientInner}>
+          {content}
+        </LinearGradient>
+      </TouchableOpacity>
+    );
+  }
+
   const getBackgroundColor = () => {
     if (disabled) return colors.borderStrong;
     if (variant === 'success') return colors.price;
@@ -43,19 +75,30 @@ export const PrimaryButton: React.FC<PrimaryButtonProps> = ({
       onPress={onPress}
       disabled={disabled || loading}
       activeOpacity={0.75}>
-      {loading ? (
-        <ActivityIndicator color={colors.textOnPrimary} size="small" />
-      ) : (
-        <>
-          {icon && icon}
-          <Text style={[styles.text, textStyle]}>{title}</Text>
-        </>
-      )}
+      {content}
     </TouchableOpacity>
   );
 };
 
 const styles = StyleSheet.create({
+  buttonWrapper: {
+    height: spacing.buttonHeight,
+    borderRadius: spacing.radiusMd,
+    overflow: 'hidden',
+    elevation: 3,
+    shadowColor: '#B45309',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 5,
+  },
+  gradientInner: {
+    width: '100%',
+    height: '100%',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: spacing.lg,
+  },
   button: {
     height: spacing.buttonHeight,
     borderRadius: spacing.radiusMd,
@@ -63,16 +106,23 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     paddingHorizontal: spacing.lg,
-    gap: spacing.sm,
     elevation: 2,
     shadowColor: colors.textPrimary,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
   },
+  innerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: spacing.sm,
+  },
   text: {
     ...typography.button,
     color: colors.textOnPrimary,
+    fontWeight: '800',
+    letterSpacing: 0.5,
   },
   disabled: {
     elevation: 0,

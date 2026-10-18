@@ -14,3 +14,5 @@ export { CheckIcon } from './CheckIcon';
 export { DiscountIcon } from './DiscountIcon';
 export { BluetoothIcon } from './BluetoothIcon';
 export { BluetoothOffIcon } from './BluetoothOffIcon';
+export { ChartBarIcon } from './ChartBarIcon';
+

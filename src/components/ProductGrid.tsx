@@ -12,6 +12,7 @@ import { SearchIcon, CloseIcon } from './icons';
 export const ProductGrid: React.FC = () => {
   const { selectedCategory, searchQuery, setSearchQuery, setSelectedCategory } = useCart();
   const { gridColumns, isPhone } = useResponsive();
+  const flatListRef = React.useRef<FlatList>(null);
 
   const filteredItems = useMemo(() => {
     return MENU_ITEMS.filter((item) => {
@@ -24,9 +25,17 @@ export const ProductGrid: React.FC = () => {
     });
   }, [selectedCategory, searchQuery]);
 
+  // Immediately reset scroll position to top whenever category or search changes
+  React.useEffect(() => {
+    flatListRef.current?.scrollToOffset({ offset: 0, animated: false });
+  }, [selectedCategory, searchQuery]);
+
   const categoryEmoji = CATEGORY_ICONS[selectedCategory] || '🍽️';
 
-  const renderItem = ({ item }: { item: MenuItem }) => <ProductCard item={item} />;
+  const renderItem = React.useCallback(
+    ({ item }: { item: MenuItem }) => <ProductCard item={item} />,
+    []
+  );
 
   return (
     <View style={styles.container}>
@@ -76,8 +85,11 @@ export const ProductGrid: React.FC = () => {
         </View>
       ) : (
         <FlatList
-          key={`grid-${gridColumns}`} // Key forces re-mount when columns change responsively
+          ref={flatListRef}
+          key={`grid-${gridColumns}`}
+          style={styles.gridList}
           data={filteredItems}
+          extraData={selectedCategory}
           keyExtractor={(item) => item.id}
           numColumns={gridColumns}
           renderItem={renderItem}
@@ -86,9 +98,11 @@ export const ProductGrid: React.FC = () => {
             { padding: isPhone ? spacing.xs : spacing.sm },
           ]}
           showsVerticalScrollIndicator={false}
-          initialNumToRender={12}
-          maxToRenderPerBatch={16}
-          windowSize={7}
+          keyboardShouldPersistTaps="handled"
+          initialNumToRender={10}
+          maxToRenderPerBatch={10}
+          windowSize={5}
+          removeClippedSubviews={false}
         />
       )}
     </View>
@@ -97,6 +111,10 @@ export const ProductGrid: React.FC = () => {
 
 const styles = StyleSheet.create({
   container: {
+    flex: 1,
+    backgroundColor: '#F8FAFC',
+  },
+  gridList: {
     flex: 1,
     backgroundColor: '#F8FAFC',
   },

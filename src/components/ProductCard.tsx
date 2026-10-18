@@ -1,6 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Image, ActivityIndicator } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 import { MenuItem, CATEGORY_ICONS } from '../data/menu';
+import { getProductImageSource } from '../data/productImages';
 import { useCart } from '../context/CartContext';
 import { useResponsive } from '../utils/responsive';
 import colors from '../theme/colors';
@@ -12,24 +14,31 @@ interface ProductCardProps {
   item: MenuItem;
 }
 
-export const ProductCard: React.FC<ProductCardProps> = ({ item }) => {
+export const ProductCard: React.FC<ProductCardProps> = React.memo(({ item }) => {
   const { addToCart, updateQuantity, getItemQuantity } = useCart();
   const { isSmallPhone, isTablet } = useResponsive();
   const quantity = getItemQuantity(item.id);
   const [imageLoaded, setImageLoaded] = useState(false);
   const [imageError, setImageError] = useState(false);
 
+  // Reset image state when item changes in recycled cards
+  useEffect(() => {
+    setImageLoaded(false);
+    setImageError(false);
+  }, [item.id]);
+
   const categoryEmoji = CATEGORY_ICONS[item.category] || '🍽️';
   const imageHeight = isSmallPhone ? 105 : isTablet ? 138 : 122;
+  const imageSource = getProductImageSource(item.id, item.image);
 
   return (
     <View style={[styles.card, isTablet && styles.cardTablet, quantity > 0 && styles.cardSelected]}>
       {/* Visual Image Header */}
       <View style={[styles.imageContainer, { height: imageHeight }]}>
-        {!imageError && item.image ? (
+        {!imageError && imageSource ? (
           <>
             <Image
-              source={{ uri: item.image }}
+              source={imageSource}
               style={styles.image}
               resizeMode="cover"
               onLoad={() => setImageLoaded(true)}
@@ -44,6 +53,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({ item }) => {
         ) : (
           <View style={styles.imageFallback}>
             <Text style={styles.fallbackEmoji}>{categoryEmoji}</Text>
+            <Text style={styles.fallbackText} numberOfLines={1}>{item.name}</Text>
           </View>
         )}
 
@@ -106,10 +116,16 @@ export const ProductCard: React.FC<ProductCardProps> = ({ item }) => {
             <TouchableOpacity
               style={[styles.addButton, isTablet && styles.addButtonTablet]}
               onPress={() => addToCart(item)}
-              activeOpacity={0.8}
+              activeOpacity={0.85}
               hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}>
-              <PlusIcon size={isTablet ? 14 : 12} color={colors.textOnPrimary} strokeWidth={3} />
-              <Text style={[styles.addButtonText, isTablet && styles.addButtonTextTablet]}>ADD</Text>
+              <LinearGradient
+                colors={colors.gradients.gold}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                style={styles.addButtonGradient}>
+                <PlusIcon size={isTablet ? 14 : 12} color="#FFFFFF" strokeWidth={3} />
+                <Text style={[styles.addButtonText, isTablet && styles.addButtonTextTablet]}>ADD</Text>
+              </LinearGradient>
             </TouchableOpacity>
           ) : (
             <View style={[styles.quantityContainer, isTablet && styles.quantityContainerTablet]}>
@@ -128,7 +144,15 @@ export const ProductCard: React.FC<ProductCardProps> = ({ item }) => {
                 onPress={() => updateQuantity(item.id, 1)}
                 activeOpacity={0.7}
                 hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}>
-                <PlusIcon size={isTablet ? 14 : 12} color={colors.textOnPrimary} strokeWidth={2.5} />
+                <LinearGradient
+                  colors={colors.gradients.gold}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 1 }}
+                  style={StyleSheet.absoluteFill}>
+                  <View style={styles.plusIconCenter}>
+                    <PlusIcon size={isTablet ? 14 : 12} color="#FFFFFF" strokeWidth={2.5} />
+                  </View>
+                </LinearGradient>
               </TouchableOpacity>
             </View>
           )}
@@ -136,7 +160,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({ item }) => {
       </View>
     </View>
   );
-};
+});
 
 const styles = StyleSheet.create({
   card: {
@@ -144,26 +168,26 @@ const styles = StyleSheet.create({
     backgroundColor: colors.surface,
     borderRadius: 16,
     borderWidth: 1.5,
-    borderColor: '#E2E8F0',
+    borderColor: '#E7E2D7',
     margin: spacing.xs,
     overflow: 'hidden',
     elevation: 3,
-    shadowColor: '#0F172A',
+    shadowColor: '#1C1917',
     shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.08,
-    shadowRadius: 8,
+    shadowOpacity: 0.07,
+    shadowRadius: 6,
   },
   cardTablet: {
     borderRadius: 18,
     margin: spacing.sm,
   },
   cardSelected: {
-    borderColor: colors.primary,
-    backgroundColor: '#FBFDFD',
+    borderColor: '#D97706',
+    backgroundColor: '#FFFDF7',
   },
   imageContainer: {
     width: '100%',
-    backgroundColor: '#F1F5F9',
+    backgroundColor: '#F7F5F0',
     position: 'relative',
     overflow: 'hidden',
   },
@@ -173,18 +197,27 @@ const styles = StyleSheet.create({
   },
   imageSkeleton: {
     ...StyleSheet.absoluteFill,
-    backgroundColor: '#E2E8F0',
+    backgroundColor: '#E7E2D7',
     alignItems: 'center',
     justifyContent: 'center',
   },
   imageFallback: {
     ...StyleSheet.absoluteFill,
-    backgroundColor: '#F8FAFC',
+    backgroundColor: '#FAF9F6',
     alignItems: 'center',
     justifyContent: 'center',
   },
   fallbackEmoji: {
-    fontSize: 42,
+    fontSize: 38,
+  },
+  fallbackText: {
+    ...typography.caption,
+    fontSize: 10,
+    fontWeight: '700',
+    color: colors.textMuted,
+    marginTop: 4,
+    paddingHorizontal: 8,
+    textAlign: 'center',
   },
   dietaryBadgeContainer: {
     position: 'absolute',
@@ -228,7 +261,7 @@ const styles = StyleSheet.create({
     zIndex: 2,
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'rgba(15, 23, 42, 0.78)',
+    backgroundColor: 'rgba(28, 25, 23, 0.85)',
     paddingHorizontal: 7,
     paddingVertical: 3,
     borderRadius: 12,
@@ -240,24 +273,26 @@ const styles = StyleSheet.create({
   },
   ratingText: {
     fontSize: 11,
-    fontWeight: '700',
+    fontWeight: '800',
     color: '#FFFFFF',
   },
   categoryPill: {
     position: 'absolute',
     bottom: 6,
     left: 8,
-    backgroundColor: 'rgba(15, 118, 110, 0.92)',
+    backgroundColor: 'rgba(28, 25, 23, 0.82)',
     paddingHorizontal: 8,
     paddingVertical: 2,
-    borderRadius: 8,
+    borderRadius: 6,
+    borderWidth: 1,
+    borderColor: 'rgba(253, 230, 138, 0.4)',
   },
   categoryPillText: {
     fontSize: 10,
-    fontWeight: '700',
-    color: '#FFFFFF',
+    fontWeight: '800',
+    color: '#FDE68A',
     textTransform: 'uppercase',
-    letterSpacing: 0.3,
+    letterSpacing: 0.4,
   },
   contentSection: {
     padding: 10,
@@ -270,7 +305,7 @@ const styles = StyleSheet.create({
   name: {
     ...typography.productName,
     fontSize: 13.5,
-    fontWeight: '700',
+    fontWeight: '800',
     color: colors.textPrimary,
     lineHeight: 18,
     minHeight: 36,
@@ -298,7 +333,7 @@ const styles = StyleSheet.create({
     marginTop: 6,
     paddingTop: 6,
     borderTopWidth: 1,
-    borderTopColor: '#F1F5F9',
+    borderTopColor: '#F7F5F0',
   },
   priceContainer: {
     flexDirection: 'row',
@@ -306,46 +341,41 @@ const styles = StyleSheet.create({
   },
   currencySymbol: {
     fontSize: 13,
-    fontWeight: '700',
-    color: '#059669',
+    fontWeight: '800',
+    color: '#B45309',
     marginRight: 1,
   },
   price: {
     ...typography.price,
     fontSize: 16,
-    fontWeight: '800',
-    color: '#059669',
+    fontWeight: '900',
+    color: '#B45309',
   },
   priceTablet: {
     fontSize: 18,
   },
   addButton: {
-    backgroundColor: colors.primary,
+    borderRadius: 10,
+    overflow: 'hidden',
+    elevation: 2,
+  },
+  addButtonTablet: {
+    borderRadius: 11,
+  },
+  addButtonGradient: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     minWidth: 68,
     height: 34,
-    borderRadius: 10,
     paddingHorizontal: 10,
     gap: 4,
-    elevation: 2,
-    shadowColor: colors.primary,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
-    shadowRadius: 4,
-  },
-  addButtonTablet: {
-    minWidth: 76,
-    height: 38,
-    borderRadius: 11,
-    paddingHorizontal: 12,
   },
   addButtonText: {
     ...typography.button,
     fontSize: 12,
-    fontWeight: '800',
-    color: colors.textOnPrimary,
+    fontWeight: '900',
+    color: '#FFFFFF',
     letterSpacing: 0.5,
   },
   addButtonTextTablet: {
@@ -354,11 +384,11 @@ const styles = StyleSheet.create({
   quantityContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#F1F5F9',
+    backgroundColor: '#F7F5F0',
     borderRadius: 10,
     padding: 2,
-    borderWidth: 1,
-    borderColor: '#CBD5E1',
+    borderWidth: 1.5,
+    borderColor: '#E7E2D7',
     height: 34,
   },
   quantityContainerTablet: {
@@ -373,6 +403,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     elevation: 1,
+    overflow: 'hidden',
   },
   qtyButtonTablet: {
     width: 32,
@@ -380,7 +411,12 @@ const styles = StyleSheet.create({
     borderRadius: 9,
   },
   qtyButtonPlus: {
-    backgroundColor: colors.primary,
+    backgroundColor: 'transparent',
+  },
+  plusIconCenter: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   qtyText: {
     ...typography.body,
@@ -395,5 +431,7 @@ const styles = StyleSheet.create({
     minWidth: 26,
   },
 });
+
+ProductCard.displayName = 'ProductCard';
 
 export default ProductCard;

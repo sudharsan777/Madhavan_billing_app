@@ -1,5 +1,5 @@
 import React, { useMemo } from 'react';
-import { View, ScrollView, StyleSheet, FlatList, Text } from 'react-native';
+import { View, ScrollView, StyleSheet, Text } from 'react-native';
 import { MENU_CATEGORIES, MENU_ITEMS, CATEGORY_ICONS } from '../data/menu';
 import { useCart } from '../context/CartContext';
 import CategoryButton from './CategoryButton';
@@ -36,7 +36,8 @@ export const CategoryList: React.FC<CategoryListProps> = ({ vertical = false }) 
         <ScrollView
           style={styles.verticalScrollView}
           contentContainerStyle={styles.verticalContent}
-          showsVerticalScrollIndicator={false}>
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled">
           {categories.map((cat) => (
             <CategoryButton
               key={cat}
@@ -55,29 +56,31 @@ export const CategoryList: React.FC<CategoryListProps> = ({ vertical = false }) 
 
   return (
     <View style={styles.horizontalContainer}>
-      <FlatList
-        data={categories}
+      <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}
-        keyExtractor={(item) => item}
         contentContainerStyle={styles.horizontalContent}
-        renderItem={({ item }) => (
+        keyboardShouldPersistTaps="handled"
+        style={styles.horizontalScrollView}>
+        {categories.map((cat) => (
           <CategoryButton
-            name={item === 'ALL' ? 'All Items' : item}
-            icon={CATEGORY_ICONS[item] || '🍽️'}
-            count={categoryCounts[item]}
-            isSelected={selectedCategory === item}
-            onPress={() => setSelectedCategory(item)}
+            key={cat}
+            name={cat === 'ALL' ? 'All Items' : cat}
+            icon={CATEGORY_ICONS[cat] || '🍽️'}
+            count={categoryCounts[cat]}
+            isSelected={selectedCategory === cat}
+            onPress={() => setSelectedCategory(cat)}
+            vertical={false}
           />
-        )}
-      />
+        ))}
+      </ScrollView>
     </View>
   );
 };
 
 const styles = StyleSheet.create({
   horizontalContainer: {
-    height: 56,
+    height: 58,
     backgroundColor: '#FFFFFF',
     borderBottomWidth: 1,
     borderBottomColor: '#E2E8F0',
@@ -85,12 +88,16 @@ const styles = StyleSheet.create({
     elevation: 2,
     shadowColor: '#0F172A',
     shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.04,
+    shadowOpacity: 0.05,
     shadowRadius: 3,
+  },
+  horizontalScrollView: {
+    flex: 1,
   },
   horizontalContent: {
     paddingHorizontal: spacing.md,
     alignItems: 'center',
+    paddingVertical: 8,
   },
   verticalContainer: {
     flex: 1,
@@ -119,6 +126,7 @@ const styles = StyleSheet.create({
   },
   verticalContent: {
     padding: spacing.md,
+    paddingBottom: 40,
   },
 });
 
