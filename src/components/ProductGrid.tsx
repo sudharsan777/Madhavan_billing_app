@@ -1,7 +1,8 @@
 import React, { useMemo } from 'react';
 import { View, FlatList, Text, StyleSheet, TouchableOpacity } from 'react-native';
-import { MENU_ITEMS, MenuItem, CATEGORY_ICONS } from '../data/menu';
+import { MenuItem, CATEGORY_ICONS } from '../data/menu';
 import { useCart } from '../context/CartContext';
+import { useProducts } from '../context/ProductContext';
 import { useResponsive } from '../utils/responsive';
 import ProductCard from './ProductCard';
 import colors from '../theme/colors';
@@ -11,11 +12,12 @@ import { SearchIcon, CloseIcon } from './icons';
 
 export const ProductGrid: React.FC = () => {
   const { selectedCategory, searchQuery, setSearchQuery, setSelectedCategory } = useCart();
+  const { products, openUploadModal } = useProducts();
   const { gridColumns, isPhone } = useResponsive();
   const flatListRef = React.useRef<FlatList>(null);
 
   const filteredItems = useMemo(() => {
-    return MENU_ITEMS.filter((item) => {
+    return products.filter((item) => {
       const matchesCategory = selectedCategory === 'ALL' || item.category === selectedCategory;
       const matchesSearch =
         searchQuery.trim() === '' ||
@@ -23,7 +25,7 @@ export const ProductGrid: React.FC = () => {
         item.category.toLowerCase().includes(searchQuery.toLowerCase().trim());
       return matchesCategory && matchesSearch;
     });
-  }, [selectedCategory, searchQuery]);
+  }, [products, selectedCategory, searchQuery]);
 
   // Immediately reset scroll position to top whenever category or search changes
   React.useEffect(() => {
@@ -51,17 +53,27 @@ export const ProductGrid: React.FC = () => {
           </View>
         </View>
 
-        {(selectedCategory !== 'ALL' || searchQuery !== '') && (
+        <View style={styles.filterRightActions}>
           <TouchableOpacity
-            style={styles.resetFilterButton}
-            onPress={() => {
-              setSelectedCategory('ALL');
-              setSearchQuery('');
-            }}>
-            <CloseIcon size={13} color={colors.textSecondary} />
-            <Text style={styles.resetFilterText}>Clear</Text>
+            style={styles.addQuickButton}
+            onPress={openUploadModal}
+            activeOpacity={0.75}
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+            <Text style={styles.addQuickButtonText}>+ Add Item</Text>
           </TouchableOpacity>
-        )}
+
+          {(selectedCategory !== 'ALL' || searchQuery !== '') && (
+            <TouchableOpacity
+              style={styles.resetFilterButton}
+              onPress={() => {
+                setSelectedCategory('ALL');
+                setSearchQuery('');
+              }}>
+              <CloseIcon size={13} color={colors.textSecondary} />
+              <Text style={styles.resetFilterText}>Clear</Text>
+            </TouchableOpacity>
+          )}
+        </View>
       </View>
 
       {/* Grid or Empty State */}
@@ -74,14 +86,21 @@ export const ProductGrid: React.FC = () => {
           <Text style={styles.emptySubtitle}>
             No dishes found for &quot;{searchQuery || selectedCategory}&quot;.
           </Text>
-          <TouchableOpacity
-            style={styles.clearSearchBtn}
-            onPress={() => {
-              setSearchQuery('');
-              setSelectedCategory('ALL');
-            }}>
-            <Text style={styles.clearSearchBtnText}>Reset Search</Text>
-          </TouchableOpacity>
+          <View style={styles.emptyActionsRow}>
+            <TouchableOpacity
+              style={styles.clearSearchBtn}
+              onPress={() => {
+                setSearchQuery('');
+                setSelectedCategory('ALL');
+              }}>
+              <Text style={styles.clearSearchBtnText}>Reset Search</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.uploadEmptyBtn}
+              onPress={openUploadModal}>
+              <Text style={styles.uploadEmptyBtnText}>+ Add New Product</Text>
+            </TouchableOpacity>
+          </View>
         </View>
       ) : (
         <FlatList
@@ -153,6 +172,26 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: '#64748B',
   },
+  filterRightActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  addQuickButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FFFDF5',
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 8,
+    borderWidth: 1.5,
+    borderColor: '#FDE68A',
+  },
+  addQuickButtonText: {
+    fontSize: 12,
+    fontWeight: '800',
+    color: '#B45309',
+  },
   resetFilterButton: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -167,6 +206,25 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: '700',
     color: colors.textSecondary,
+  },
+  emptyActionsRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 10,
+    justifyContent: 'center',
+  },
+  uploadEmptyBtn: {
+    backgroundColor: '#FFFDF5',
+    paddingHorizontal: spacing.lg,
+    paddingVertical: 10,
+    borderRadius: 10,
+    borderWidth: 1.5,
+    borderColor: '#FDE68A',
+  },
+  uploadEmptyBtnText: {
+    fontSize: 13,
+    fontWeight: '800',
+    color: '#B45309',
   },
   listContent: {
     paddingBottom: 40,

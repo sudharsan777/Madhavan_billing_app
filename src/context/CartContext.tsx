@@ -25,6 +25,7 @@ interface CartContextType {
   totalAmount: number;
   totalItemCount: number;
   getItemQuantity: (itemId: string) => number;
+  updateItemPrice: (itemId: string, newPrice: number) => void;
 }
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
@@ -79,6 +80,16 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return found ? found.quantity : 0;
   };
 
+  const updateItemPrice = (itemId: string, newPrice: number) => {
+    setCartItems((prev) =>
+      prev.map((ci) =>
+        ci.item.id === itemId
+          ? { ...ci, item: { ...ci.item, price: newPrice } }
+          : ci
+      )
+    );
+  };
+
   const subtotal = useMemo(() => {
     return cartItems.reduce((sum, ci) => sum + ci.item.price * ci.quantity, 0);
   }, [cartItems]);
@@ -116,6 +127,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
         totalAmount,
         totalItemCount,
         getItemQuantity,
+        updateItemPrice,
       }}>
       {children}
     </CartContext.Provider>

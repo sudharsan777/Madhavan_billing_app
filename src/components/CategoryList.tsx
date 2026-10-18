@@ -1,7 +1,8 @@
 import React, { useMemo } from 'react';
 import { View, ScrollView, StyleSheet, Text } from 'react-native';
-import { MENU_CATEGORIES, MENU_ITEMS, CATEGORY_ICONS } from '../data/menu';
+import { MENU_CATEGORIES, CATEGORY_ICONS } from '../data/menu';
 import { useCart } from '../context/CartContext';
+import { useProducts } from '../context/ProductContext';
 import CategoryButton from './CategoryButton';
 import colors from '../theme/colors';
 import spacing from '../theme/spacing';
@@ -14,17 +15,21 @@ interface CategoryListProps {
 
 export const CategoryList: React.FC<CategoryListProps> = ({ vertical = false }) => {
   const { selectedCategory, setSelectedCategory } = useCart();
+  const { products, categories: dynamicCategories } = useProducts();
 
-  // Compute counts per category
+  // Compute counts per category dynamically from active products
   const categoryCounts = useMemo(() => {
-    const counts: Record<string, number> = { ALL: MENU_ITEMS.length };
-    MENU_ITEMS.forEach((item) => {
+    const counts: Record<string, number> = { ALL: products.length };
+    products.forEach((item) => {
       counts[item.category] = (counts[item.category] || 0) + 1;
     });
     return counts;
-  }, []);
+  }, [products]);
 
-  const categories = useMemo(() => ['ALL', ...MENU_CATEGORIES], []);
+  const categories = useMemo(() => {
+    const list = dynamicCategories.length > 0 ? dynamicCategories : (MENU_CATEGORIES as unknown as string[]);
+    return ['ALL', ...list];
+  }, [dynamicCategories]);
 
   if (vertical) {
     return (

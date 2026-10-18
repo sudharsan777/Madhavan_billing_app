@@ -4,6 +4,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { MenuItem, CATEGORY_ICONS } from '../data/menu';
 import { getProductImageSource } from '../data/productImages';
 import { useCart } from '../context/CartContext';
+import { useProducts } from '../context/ProductContext';
 import { useResponsive } from '../utils/responsive';
 import colors from '../theme/colors';
 import spacing from '../theme/spacing';
@@ -16,6 +17,7 @@ interface ProductCardProps {
 
 export const ProductCard: React.FC<ProductCardProps> = React.memo(({ item }) => {
   const { addToCart, updateQuantity, getItemQuantity } = useCart();
+  const { openPriceEdit } = useProducts();
   const { isSmallPhone, isTablet } = useResponsive();
   const quantity = getItemQuantity(item.id);
   const [imageLoaded, setImageLoaded] = useState(false);
@@ -107,10 +109,17 @@ export const ProductCard: React.FC<ProductCardProps> = React.memo(({ item }) => 
 
         {/* Price & Action Row */}
         <View style={styles.footerRow}>
-          <View style={styles.priceContainer}>
+          <TouchableOpacity
+            style={styles.priceContainer}
+            onPress={() => openPriceEdit(item)}
+            activeOpacity={0.7}
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
             <Text style={styles.currencySymbol}>₹</Text>
             <Text style={[styles.price, isTablet && styles.priceTablet]}>{item.price}</Text>
-          </View>
+            <View style={styles.editPricePencil}>
+              <Text style={styles.editPricePencilText}>✏️</Text>
+            </View>
+          </TouchableOpacity>
 
           {quantity === 0 ? (
             <TouchableOpacity
@@ -337,7 +346,22 @@ const styles = StyleSheet.create({
   },
   priceContainer: {
     flexDirection: 'row',
-    alignItems: 'baseline',
+    alignItems: 'center',
+    gap: 2,
+  },
+  editPricePencil: {
+    marginLeft: 3,
+    width: 18,
+    height: 18,
+    borderRadius: 9,
+    backgroundColor: '#FEF3C7',
+    borderWidth: 1,
+    borderColor: '#FDE68A',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  editPricePencilText: {
+    fontSize: 9,
   },
   currencySymbol: {
     fontSize: 13,

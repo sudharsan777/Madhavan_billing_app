@@ -2,6 +2,7 @@ import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect } from 'react';
 import { registerAndSavePushToken } from '../services/fcmTokenService';
+import { ProductProvider } from '../context/ProductContext';
 
 export default function RootLayout() {
   // Register device push token on app startup so Cloud Function
@@ -11,7 +12,7 @@ export default function RootLayout() {
   }, []);
 
   return (
-    <>
+    <ProductProvider>
       <StatusBar style="dark" />
       <Stack
         screenOptions={{
@@ -28,6 +29,6 @@ export default function RootLayout() {
           }}
         />
       </Stack>
-    </>
+    </ProductProvider>
   );
 }

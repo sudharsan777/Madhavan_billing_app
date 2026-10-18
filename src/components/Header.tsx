@@ -8,7 +8,8 @@ import colors from '../theme/colors';
 import spacing from '../theme/spacing';
 import typography from '../theme/typography';
 import SHOP_CONFIG from '../constants/shop';
-import { SearchIcon, CartIcon, CloseIcon, SettingsIcon, ReceiptIcon, ChartBarIcon } from './icons';
+import { SearchIcon, CartIcon, CloseIcon, SettingsIcon, ReceiptIcon, ChartBarIcon, PlusIcon } from './icons';
+import { useProducts } from '../context/ProductContext';
 import PrinterStatus from './PrinterStatus';
 import PrinterConnectionModal from './PrinterConnectionModal';
 import BillHistoryModal from './BillHistoryModal';
@@ -20,6 +21,7 @@ interface HeaderProps {
 
 export const Header: React.FC<HeaderProps> = ({ onOpenCart }) => {
   const { searchQuery, setSearchQuery, totalItemCount, totalAmount } = useCart();
+  const { openUploadModal } = useProducts();
   const { isSmallPhone, isPhone } = useResponsive();
   const router = useRouter();
   const [printerModalVisible, setPrinterModalVisible] = useState(false);
@@ -72,6 +74,24 @@ export const Header: React.FC<HeaderProps> = ({ onOpenCart }) => {
 
       {/* Right Actions */}
       <View style={styles.actionsContainer}>
+        {/* Upload / Add Item Button */}
+        <TouchableOpacity
+          style={styles.addItemHeaderBtn}
+          onPress={openUploadModal}
+          activeOpacity={0.85}
+          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+          <LinearGradient
+            colors={['#FFFDF5', '#FEF3C7']}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={styles.addItemHeaderGradient}>
+            <PlusIcon size={14} color="#B45309" strokeWidth={3} />
+            {!isPhone && (
+              <Text style={styles.addItemHeaderText}>+ Item</Text>
+            )}
+          </LinearGradient>
+        </TouchableOpacity>
+
         {/* Sales Dashboard Gold Linear Gradient Button */}
         <TouchableOpacity
           style={styles.goldDashboardButton}
@@ -254,6 +274,31 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: '800',
     color: '#FFFFFF',
+  },
+  addItemHeaderBtn: {
+    borderRadius: 10,
+    overflow: 'hidden',
+    borderWidth: 1.5,
+    borderColor: '#FCD34D',
+    elevation: 2,
+    shadowColor: '#B45309',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.12,
+    shadowRadius: 2,
+  },
+  addItemHeaderGradient: {
+    height: 38,
+    paddingHorizontal: 10,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 4,
+  },
+  addItemHeaderText: {
+    fontSize: 12,
+    fontWeight: '800',
+    color: '#B45309',
+    letterSpacing: 0.2,
   },
   goldDashboardButton: {
     borderRadius: 10,

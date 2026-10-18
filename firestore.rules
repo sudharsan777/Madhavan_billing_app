@@ -12,6 +12,16 @@ service cloud.firestore {
       allow read, write: if true;
     }
 
+    // ── Products & Custom Items ──
+    match /products/{productId} {
+      allow read, write: if true;
+    }
+
+    // ── Price Overrides ──
+    match /price_overrides/{productId} {
+      allow read, write: if true;
+    }
+
     // ── Connection tests — cleanup after test ──
     match /_connection_tests/{testId} {
       allow read, write: if true;

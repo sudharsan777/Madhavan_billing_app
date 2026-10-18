@@ -164,6 +164,8 @@ export const SalesDashboard: React.FC<SalesDashboardProps> = ({ showBack = true 
   const { width } = useWindowDimensions();
   const isTablet = width >= 768;
   const isLargeTablet = width >= 1024;
+  const isPhone = width < 768;
+  const isSmallPhone = width < 380;
 
   const [bills, setBills] = useState<BillData[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(() => isFirebaseConfigured());
@@ -446,32 +448,36 @@ export const SalesDashboard: React.FC<SalesDashboardProps> = ({ showBack = true 
       <StatusBar barStyle="light-content" backgroundColor="#1C1917" />
 
       {/* ── Top Bar with Gold Linear Gradient Accent ── */}
-      <View style={styles.topBar}>
-        <View style={styles.topBarLeft}>
+      <View style={[styles.topBar, isPhone && styles.topBarPhone]}>
+        <View style={[styles.topBarLeft, isPhone && styles.topBarLeftPhone]}>
           <LinearGradient
             colors={colors.gradients.gold}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}
-            style={styles.goldIconCircle}>
-            <ChartBarIcon size={20} color="#FFFFFF" />
+            style={[styles.goldIconCircle, isPhone && styles.goldIconCirclePhone]}>
+            <ChartBarIcon size={isPhone ? 18 : 20} color="#FFFFFF" />
           </LinearGradient>
-          <View>
+          <View style={{ flex: 1 }}>
             <View style={styles.titleRow}>
-              <Text style={styles.topBarTitle}>Sales & Revenue Analytics</Text>
+              <Text style={[styles.topBarTitle, isPhone && styles.topBarTitlePhone]} numberOfLines={1}>
+                {isSmallPhone ? 'Analytics' : 'Sales Analytics'}
+              </Text>
               {isLiveConnected && (
                 <View style={styles.liveBadge}>
                   <View style={styles.liveDot} />
-                  <Text style={styles.liveBadgeText}>LIVE CLOUD SYNC</Text>
+                  <Text style={styles.liveBadgeText}>LIVE</Text>
                 </View>
               )}
             </View>
-            <Text style={styles.topBarSubtitle}>
-              {SHOP_CONFIG.name} · Real-time Firestore Dashboard
-            </Text>
+            {!isSmallPhone && (
+              <Text style={styles.topBarSubtitle} numberOfLines={1}>
+                {SHOP_CONFIG.name} · Cloud Dashboard
+              </Text>
+            )}
           </View>
         </View>
 
-        <View style={styles.topBarRight}>
+        <View style={[styles.topBarRight, isPhone && styles.topBarRightPhone]}>
           {/* Quick PDF Export Button */}
           <TouchableOpacity
             onPress={handleExportPeriodPdf}
@@ -482,7 +488,7 @@ export const SalesDashboard: React.FC<SalesDashboardProps> = ({ showBack = true 
               colors={['#FEF3C7', '#FDE68A']}
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 1 }}
-              style={styles.pdfHeaderBtnGradient}>
+              style={[styles.pdfHeaderBtnGradient, isPhone && styles.pdfHeaderBtnGradientPhone]}>
               {isExportingPdf ? (
                 <ActivityIndicator size="small" color="#78350F" />
               ) : (
@@ -498,7 +504,7 @@ export const SalesDashboard: React.FC<SalesDashboardProps> = ({ showBack = true 
 
           <TouchableOpacity
             onPress={handleRefresh}
-            style={styles.refreshBtn}
+            style={[styles.refreshBtn, isPhone && styles.refreshBtnPhone]}
             disabled={isLoading || isRefreshing}
             activeOpacity={0.7}>
             {isRefreshing ? (
@@ -516,7 +522,7 @@ export const SalesDashboard: React.FC<SalesDashboardProps> = ({ showBack = true 
               }}
               style={styles.closeBtn}
               hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
-              <CloseIcon size={20} color={colors.textSecondary} />
+              <CloseIcon size={isPhone ? 18 : 20} color={colors.textSecondary} />
             </TouchableOpacity>
           )}
         </View>
@@ -566,7 +572,7 @@ export const SalesDashboard: React.FC<SalesDashboardProps> = ({ showBack = true 
                       ? "TODAY'S REVENUE"
                       : `${activePeriodLabel.toUpperCase()} REVENUE`}
                   </Text>
-                  <Text style={styles.heroAmount}>
+                  <Text style={[styles.heroAmount, isPhone && styles.heroAmountPhone]}>
                     {selectedPreset === 'ALL'
                       ? formatCurrency(analytics.todaySales)
                       : formatCurrency(periodSummary.totalRevenue)}
@@ -588,8 +594,8 @@ export const SalesDashboard: React.FC<SalesDashboardProps> = ({ showBack = true 
 
               <View style={styles.heroDivider} />
 
-              <View style={styles.heroStatsRow}>
-                <View style={styles.heroStatCol}>
+              <View style={[styles.heroStatsRow, isPhone && styles.heroStatsRowPhone]}>
+                <View style={[styles.heroStatCol, isPhone && styles.heroStatColPhone]}>
                   <Text style={styles.heroStatLabel}>Avg Ticket</Text>
                   <Text style={styles.heroStatValue}>
                     {selectedPreset === 'ALL'
@@ -598,7 +604,7 @@ export const SalesDashboard: React.FC<SalesDashboardProps> = ({ showBack = true 
                   </Text>
                 </View>
 
-                <View style={styles.heroStatCol}>
+                <View style={[styles.heroStatCol, isPhone && styles.heroStatColPhone]}>
                   <Text style={styles.heroStatLabel}>Cash Sales</Text>
                   <Text style={[styles.heroStatValue, { color: '#34D399' }]}>
                     {selectedPreset === 'ALL'
@@ -607,7 +613,7 @@ export const SalesDashboard: React.FC<SalesDashboardProps> = ({ showBack = true 
                   </Text>
                 </View>
 
-                <View style={styles.heroStatCol}>
+                <View style={[styles.heroStatCol, isPhone && styles.heroStatColPhone]}>
                   <Text style={styles.heroStatLabel}>UPI Sales</Text>
                   <Text style={[styles.heroStatValue, { color: '#60A5FA' }]}>
                     {selectedPreset === 'ALL'
@@ -616,7 +622,7 @@ export const SalesDashboard: React.FC<SalesDashboardProps> = ({ showBack = true 
                   </Text>
                 </View>
 
-                <View style={styles.heroStatCol}>
+                <View style={[styles.heroStatCol, isPhone && styles.heroStatColPhone]}>
                   <Text style={styles.heroStatLabel}>All-Time Sales</Text>
                   <Text style={[styles.heroStatValue, { color: '#FDE68A' }]}>
                     {formatCurrency(analytics.totalAllTimeSales)}
@@ -1403,6 +1409,34 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.border,
   },
+  topBarPhone: {
+    paddingHorizontal: spacing.sm,
+    paddingVertical: 10,
+    gap: spacing.xs,
+  },
+  topBarLeftPhone: {
+    gap: 8,
+  },
+  goldIconCirclePhone: {
+    width: 34,
+    height: 34,
+    borderRadius: 17,
+  },
+  topBarTitlePhone: {
+    fontSize: 14,
+  },
+  topBarRightPhone: {
+    gap: 5,
+  },
+  pdfHeaderBtnGradientPhone: {
+    paddingHorizontal: 8,
+    paddingVertical: 6,
+  },
+  refreshBtnPhone: {
+    minWidth: 50,
+    paddingHorizontal: 8,
+    paddingVertical: 6,
+  },
 
   // ── Scroll
   scroll: { flex: 1, backgroundColor: colors.background },
@@ -1489,6 +1523,9 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     letterSpacing: 0.5,
   },
+  heroAmountPhone: {
+    fontSize: 27,
+  },
   heroBadgePill: {
     paddingHorizontal: 12,
     paddingVertical: 6,
@@ -1508,7 +1545,15 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
   },
+  heroStatsRowPhone: {
+    flexWrap: 'wrap',
+    rowGap: 10,
+  },
   heroStatCol: { flex: 1 },
+  heroStatColPhone: {
+    width: '50%',
+    flex: undefined,
+  },
   heroStatLabel: {
     fontSize: 11,
     color: '#D6D3D1',

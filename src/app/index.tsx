@@ -13,6 +13,8 @@ import colors from '../theme/colors';
 import spacing from '../theme/spacing';
 import typography from '../theme/typography';
 import { CartIcon, ArrowRightIcon } from '../components/icons';
+import PriceEditModal from '../components/PriceEditModal';
+import ProductUploadModal from '../components/ProductUploadModal';
 
 function MainPOSContent() {
   const { isSmallPhone, isPhone, isTablet, isLargeTablet, isLandscape } = useResponsive();
@@ -138,6 +140,10 @@ function MainPOSContent() {
             </View>
           </View>
         )}
+
+        {/* Global Price Edit & Product Upload Modals for Mobile & Tablet */}
+        <PriceEditModal />
+        <ProductUploadModal />
       </View>
     </SafeAreaView>
   );
